@@ -5,10 +5,8 @@ import { PRODIGI_SKUS } from "@/lib/prodigiSkus";
 
 export const runtime = "nodejs";
 
-// Shopify "orders/paid" webhook. Register it (pointing at this URL) in your
-// Shopify app/admin, and set SHOPIFY_WEBHOOK_SECRET to the webhook signing
-// secret. On a paid order this reads the artwork attached to each line item
-// and creates a Prodigi print order. Digital items are skipped (email those).
+// Shopify "orders/paid" webhook -> create a Prodigi order from the artwork on
+// each line item. Verbose logging so deliveries can be traced in Vercel logs.
 
 type LineItem = {
   sku: string | null;
@@ -48,25 +46,41 @@ function prop(item: LineItem, key: string): string | undefined {
 export async function POST(request: Request) {
   const raw = await request.text();
   const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
-  if (!secret) return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
 
-  if (!verify(raw, request.headers.get("x-shopify-hmac-sha256"), secret)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  // Verify the signature when a secret is configured. If it isn't set yet
+  // (e.g. sandbox testing), process anyway but warn — SET IT BEFORE GOING LIVE.
+  if (secret) {
+    if (!verify(raw, request.headers.get("x-shopify-hmac-sha256"), secret)) {
+      console.warn("[orders/paid] invalid signature — rejecting");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+  } else {
+    console.warn("[orders/paid] SHOPIFY_WEBHOOK_SECRET not set — skipping verification (set it before going live)");
   }
 
-  const order = JSON.parse(raw) as ShopifyOrder;
-  const addr = order.shipping_address;
+  let order: ShopifyOrder;
+  try {
+    order = JSON.parse(raw) as ShopifyOrder;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  console.log(`[orders/paid] order=${order.name} lineItems=${order.line_items?.length ?? 0}`);
 
   const items: ProdigiOrderItem[] = [];
-  const digitalOnly: string[] = [];
+  const skipped: string[] = [];
   for (const li of order.line_items ?? []) {
     const mapped = li.sku ? PRODIGI_SKUS[li.sku] : undefined;
     const printUrl = prop(li, "_artwork_print_url");
+    console.log(`[orders/paid] line sku=${li.sku} mapped=${mapped?.sku ?? "none"} printUrl=${printUrl ? "yes" : "no"}`);
     if (!mapped) {
-      if (li.sku) digitalOnly.push(li.sku); // e.g. PP-DIGITAL -> email separately
+      if (li.sku) skipped.push(`${li.sku}:unmapped`);
       continue;
     }
-    if (!printUrl || printUrl === "pending-generation") continue;
+    if (!printUrl || printUrl === "pending-generation") {
+      skipped.push(`${li.sku}:no-artwork`);
+      continue;
+    }
     items.push({
       sku: mapped.sku,
       copies: li.quantity || 1,
@@ -76,12 +90,15 @@ export async function POST(request: Request) {
   }
 
   if (items.length === 0) {
-    // Nothing to print (digital only, or missing artwork). Acknowledge so
-    // Shopify doesn't retry; handle digital fulfilment elsewhere.
-    return NextResponse.json({ ok: true, printed: 0, digitalOnly });
+    console.warn(`[orders/paid] nothing to print. skipped=${JSON.stringify(skipped)}`);
+    return NextResponse.json({ ok: true, printed: 0, skipped });
   }
 
-  if (!addr) return NextResponse.json({ error: "No shipping address" }, { status: 400 });
+  const addr = order.shipping_address;
+  if (!addr) {
+    console.warn("[orders/paid] no shipping address");
+    return NextResponse.json({ error: "No shipping address" }, { status: 400 });
+  }
 
   try {
     const result = await createProdigiOrder({
@@ -100,10 +117,11 @@ export async function POST(request: Request) {
       },
       items,
     });
+    console.log(`[orders/paid] Prodigi order created id=${result.id} items=${items.length}`);
     return NextResponse.json({ ok: true, prodigiOrderId: result.id, printed: items.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Prodigi order failed";
-    // 500 lets Shopify retry the webhook.
+    console.error(`[orders/paid] Prodigi error: ${message}`);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

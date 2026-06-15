@@ -9,9 +9,9 @@ export type ProdigiItem = { sku: string; sizing: "fillPrintArea" | "fitPrintArea
 
 export const PRODIGI_SKUS: Record<string, ProdigiItem> = {
   // Unframed fine-art prints
-  "PP-UNF-8x10": { sku: "ART-FAP-CPWP-10X12", sizing: "fillPrintArea" },
-  "PP-UNF-12x16": { sku: "GLOBAL-FAP-12X16", sizing: "fillPrintArea" },
-  "PP-UNF-16x20": { sku: "GLOBAL-FAP-16X20", sizing: "fillPrintArea" },
+  "PP-UNF-8x10": { sku: "ART-FAP-CPWP-8X10", sizing: "fillPrintArea" },
+  "PP-UNF-12x16": { sku: "ART-FAP-CPWP-12X16", sizing: "fillPrintArea" },
+  "PP-UNF-16x20": { sku: "ART-FAP-CPWP-16X20", sizing: "fillPrintArea" },
   // Framed prints
   "PP-FR-8x10": { sku: "GLOBAL-CFPM-8X10", sizing: "fillPrintArea" },
   "PP-FR-12x16": { sku: "GLOBAL-CFPM-12X16", sizing: "fillPrintArea" },
