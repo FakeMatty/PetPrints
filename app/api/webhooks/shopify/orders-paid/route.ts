@@ -92,6 +92,7 @@ export async function POST(request: Request) {
       sku: mapped.sku,
       copies: li.quantity || 1,
       sizing: mapped.sizing,
+      ...(mapped.attributes ? { attributes: mapped.attributes } : {}),
       assets: [{ printArea: "default", url: printUrl }],
     });
   }
