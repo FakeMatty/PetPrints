@@ -1,9 +1,11 @@
 "use client";
 
-// Rasterize the live preview SVG (pet + background + pattern + name) into a
-// high-resolution PNG for print. Runs in the browser so it matches exactly
-// what the customer sees, with their fonts. The pet image is inlined as a data
-// URL first so the canvas isn't tainted by the cross-origin asset.
+import { supabaseBrowser } from "./supabaseBrowser";
+
+// Rasterize the live preview SVG (pet + background + pattern + name) to a
+// high-resolution PNG and upload it straight to Supabase Storage from the
+// browser. Direct upload avoids the serverless body-size limit, so we can store
+// true full-resolution prints. Returns the permanent public URL.
 
 async function urlToDataUrl(url: string): Promise<string> {
   const res = await fetch(url, { mode: "cors" });
@@ -26,8 +28,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// Returns a base64 PNG data URL at print resolution (default 1600x2000, 4:5).
-export async function composePrintDataUrl(svgEl: SVGSVGElement, width = 1600): Promise<string> {
+async function renderToCanvas(svgEl: SVGSVGElement, width: number): Promise<HTMLCanvasElement> {
   const height = Math.round((width * 500) / 400);
   const clone = svgEl.cloneNode(true) as SVGSVGElement;
 
@@ -36,8 +37,7 @@ export async function composePrintDataUrl(svgEl: SVGSVGElement, width = 1600): P
   if (image) {
     const href = image.getAttribute("href") ?? image.getAttribute("xlink:href");
     if (href && !href.startsWith("data:")) {
-      const dataUrl = await urlToDataUrl(href);
-      image.setAttribute("href", dataUrl);
+      image.setAttribute("href", await urlToDataUrl(href));
     }
   }
 
@@ -53,5 +53,22 @@ export async function composePrintDataUrl(svgEl: SVGSVGElement, width = 1600): P
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not supported");
   ctx.drawImage(bitmap, 0, 0, width, height);
-  return canvas.toDataURL("image/png");
+  return canvas;
+}
+
+// Compose the print file at the given width and upload it to Supabase.
+export async function composeAndUploadPrint(svgEl: SVGSVGElement, width = 1600): Promise<string> {
+  const canvas = await renderToCanvas(svgEl, width);
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not encode print file"))), "image/png"),
+  );
+
+  const sb = supabaseBrowser();
+  const path = `print/${crypto.randomUUID()}.png`;
+  const { error } = await sb.storage.from("pet-art").upload(path, blob, {
+    contentType: "image/png",
+    upsert: false,
+  });
+  if (error) throw new Error(`Print upload failed: ${error.message}`);
+  return sb.storage.from("pet-art").getPublicUrl(path).data.publicUrl;
 }

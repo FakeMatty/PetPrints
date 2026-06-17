@@ -5,7 +5,7 @@ import PortraitArt, { type PortraitConfig } from "./PortraitArt";
 import ProductMockup, { type ProductKey } from "./ProductMockup";
 import { STYLES, PATTERNS, COLOURS, FONTS } from "@/lib/palette";
 import { CATALOG } from "@/lib/products";
-import { composePrintDataUrl } from "@/lib/printfile";
+import { composeAndUploadPrint } from "@/lib/printfile";
 
 const PRODUCTS: { key: ProductKey; label: string }[] = [
   { key: "canvas", label: "Canvas" },
@@ -115,14 +115,10 @@ export default function Configurator({
     try {
       const svgEl = printRef.current?.querySelector("svg");
       if (svgEl) {
-        const dataUrl = await composePrintDataUrl(svgEl as unknown as SVGSVGElement, 1600);
-        const r = await fetch("/api/persist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dataUrl }),
-        });
-        const d = await r.json();
-        if (r.ok && d.url) printUrl = d.url;
+        // Full ~300 DPI for the chosen size (width = 240 * inches). Uploaded
+        // directly to Supabase from the browser, so no request-size cap.
+        const printWidth = Math.max(1200, Math.round(240 * (activeVariant.inches ?? 8)));
+        printUrl = await composeAndUploadPrint(svgEl as unknown as SVGSVGElement, printWidth);
       }
     } catch {
       /* fall back to the pet image URL if compositing fails */

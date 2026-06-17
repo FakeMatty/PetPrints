@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { createProdigiOrder, type ProdigiOrderItem } from "@/lib/prodigi";
 import { PRODIGI_SKUS } from "@/lib/prodigiSkus";
+import { sendDigitalEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -69,9 +70,15 @@ export async function POST(request: Request) {
 
   const items: ProdigiOrderItem[] = [];
   const skipped: string[] = [];
+  const digital: { pngUrl?: string; svgUrl?: string }[] = [];
   for (const li of order.line_items ?? []) {
-    const mapped = li.sku ? PRODIGI_SKUS[li.sku] : undefined;
     const printUrl = prop(li, "_artwork_print_url");
+    // Digital download — deliver by email, not Prodigi.
+    if (li.sku === "PP-DIGITAL") {
+      digital.push({ pngUrl: printUrl, svgUrl: prop(li, "_artwork_svg_url") });
+      continue;
+    }
+    const mapped = li.sku ? PRODIGI_SKUS[li.sku] : undefined;
     console.log(`[orders/paid] line sku=${li.sku} mapped=${mapped?.sku ?? "none"} printUrl=${printUrl ? "yes" : "no"}`);
     if (!mapped) {
       if (li.sku) skipped.push(`${li.sku}:unmapped`);
@@ -89,9 +96,17 @@ export async function POST(request: Request) {
     });
   }
 
+  // Deliver digital downloads by email (best-effort; no-op if Resend not set).
+  if (digital.length && order.email) {
+    for (const d of digital) {
+      const sent = await sendDigitalEmail(order.email, d);
+      console.log(`[orders/paid] digital email to ${order.email}: ${sent ? "sent" : "skipped/failed"}`);
+    }
+  }
+
   if (items.length === 0) {
-    console.warn(`[orders/paid] nothing to print. skipped=${JSON.stringify(skipped)}`);
-    return NextResponse.json({ ok: true, printed: 0, skipped });
+    console.warn(`[orders/paid] no print items. skipped=${JSON.stringify(skipped)} digital=${digital.length}`);
+    return NextResponse.json({ ok: true, printed: 0, emailed: digital.length, skipped });
   }
 
   const addr = order.shipping_address;

@@ -19,13 +19,36 @@ export default function UploadZone({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  function readAsDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result as string);
-      r.onerror = () => reject(new Error("Could not read that file"));
-      r.readAsDataURL(file);
-    });
+  const MIN_EDGE = 600; // reject photos too small for a crisp print
+
+  // Validate size, auto-rotate via EXIF, downscale huge files, return a clean
+  // data URL (re-encoding also strips EXIF so orientation is baked in).
+  async function normalizeImage(file: File): Promise<string> {
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch {
+      bitmap = await createImageBitmap(file);
+    }
+    const { width, height } = bitmap;
+    if (Math.min(width, height) < MIN_EDGE) {
+      bitmap.close();
+      throw new Error(
+        `That photo is a little small (${width}×${height}px). Use one at least ${MIN_EDGE}px on the short edge for a sharp print.`,
+      );
+    }
+    const maxEdge = 2000;
+    const scale = Math.min(1, maxEdge / Math.max(width, height));
+    const w = Math.round(width * scale);
+    const h = Math.round(height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not supported");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
+    return canvas.toDataURL("image/jpeg", 0.92);
   }
 
   async function handle(file?: File) {
@@ -36,8 +59,8 @@ export default function UploadZone({
       return;
     }
     try {
-      setStatus("Reading your photo…");
-      const dataUrl = await readAsDataUrl(file);
+      setStatus("Checking your photo…");
+      const dataUrl = await normalizeImage(file);
       setStatus("Turning them into art… this takes a few seconds");
       const res = await fetch("/api/generate", {
         method: "POST",
