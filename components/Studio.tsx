@@ -13,6 +13,31 @@ const LOADING_MSGS = [
   "Adding the finishing touches…",
 ];
 
+const STEP_LABELS = ["Upload", "Design", "Order"];
+
+function Stepper({ current, variant = "light" }: { current: number; variant?: "light" | "dark" }) {
+  const activeText = variant === "dark" ? "text-white" : "text-ink";
+  const muted = variant === "dark" ? "text-white/55" : "text-ink/40";
+  const line = variant === "dark" ? "bg-white/30" : "bg-black/15";
+  return (
+    <div className="mx-auto mb-8 flex w-full max-w-md items-center justify-center">
+      {STEP_LABELS.map((s, i) => (
+        <div key={s} className="flex items-center">
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
+              i <= current ? "bg-terracotta text-white" : variant === "dark" ? "bg-white/20 text-white/70" : "bg-black/10 text-ink/50"
+            }`}
+          >
+            {i + 1}
+          </span>
+          <span className={`ml-2 text-sm ${i === current ? `${activeText} font-medium` : muted}`}>{s}</span>
+          {i < STEP_LABELS.length - 1 ? <span className={`mx-3 h-px w-8 ${line}`} /> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Studio() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -58,7 +83,6 @@ export default function Studio() {
       setError("That doesn't look like a photo — try a JPG or PNG of your pet.");
       return;
     }
-
     let dataUrl: string;
     try {
       dataUrl = await normalizeImage(file);
@@ -66,19 +90,16 @@ export default function Studio() {
       setError(e instanceof Error ? e.message : "Could not read that photo");
       return;
     }
-
     setPreview(dataUrl);
     setPhase("loading");
     setProgress(6);
     setMsg(LOADING_MSGS[0]);
-
     let p = 6;
     const tick = window.setInterval(() => {
       p = Math.min(92, p + Math.random() * 7 + 2);
       setProgress(p);
       setMsg(LOADING_MSGS[Math.min(LOADING_MSGS.length - 1, Math.floor(p / 24))]);
     }, 900);
-
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -101,12 +122,15 @@ export default function Studio() {
     }
   }
 
-  // ---- editing ----------------------------------------------------------
+  // ---- editing: Step 2 (Design) → Step 3 (Order) ------------------------
   if (phase === "editing") {
     return (
       <section id="studio" className="mx-auto max-w-content px-5 py-12">
-        <h2 className="mb-1 font-display text-3xl">Pick your favourite</h2>
-        <p className="mb-8 text-ink/60">Flip any option — it updates instantly. Add to cart when you love it.</p>
+        <Stepper current={1} />
+        <div className="mb-8 text-center">
+          <h2 className="font-display text-3xl">Design your portrait</h2>
+          <p className="mt-1 text-ink/60">Style it on the left, then pick your product and add to cart — it updates instantly.</p>
+        </div>
         <Configurator petImageUrl={result?.petImageUrl} flatVectorUrl={result?.flatVectorUrl} generationId={result?.generationId} />
       </section>
     );
@@ -115,13 +139,15 @@ export default function Studio() {
   // ---- loading ----------------------------------------------------------
   if (phase === "loading") {
     return (
-      <section id="studio" className="flex min-h-[78vh] items-center justify-center bg-bone px-5">
+      <section id="studio" className="flex min-h-[78vh] flex-col items-center justify-center bg-bone px-5 py-16">
+        <Stepper current={0} />
         <div className="w-full max-w-sm text-center">
           <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-2xl ring-1 ring-black/10">
-            {preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : null}
+            {preview ? <img src={preview} alt="Your pet" className="h-full w-full object-cover" /> : null}
             <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-bone/70 to-transparent" />
           </div>
           <p className="mt-6 font-display text-2xl text-ink">{msg}</p>
+          <p className="mt-1 text-sm text-ink/55">Hang tight — this takes a few seconds. Don&apos;t close the page.</p>
           <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-black/10">
             <div className="h-full rounded-full bg-terracotta transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
           </div>
@@ -131,18 +157,18 @@ export default function Studio() {
     );
   }
 
-  // ---- idle (hero + upload over the image) ------------------------------
+  // ---- idle: Step 1 (Upload) -------------------------------------------
   return (
     <section id="studio" className="relative flex min-h-[80vh] items-center justify-center overflow-hidden">
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: "#2E2E2E", backgroundImage: "url('/images/hero.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
-      />
+      <div className="absolute inset-0" style={{ backgroundColor: "#2E2E2E", backgroundImage: "url('/images/hero.jpg')", backgroundSize: "cover", backgroundPosition: "center" }} />
       <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-black/55" />
-      <div className="relative z-10 mx-auto w-full max-w-xl px-5 py-16 text-center text-white">
-        <p className="mb-3 text-sm uppercase tracking-[0.3em] text-white/80">Custom pet art</p>
+      <div className="relative z-10 mx-auto w-full max-w-xl px-5 py-20 text-center text-white">
         <h1 className="font-display text-5xl leading-[1.05] drop-shadow sm:text-6xl">Your dog. As art. In seconds.</h1>
-        <p className="mx-auto mt-4 max-w-md text-lg text-white/85">Upload a photo and watch them become a gallery-grade portrait — see it before you pay.</p>
+        <p className="mx-auto mt-4 max-w-md text-lg text-white/85">Three quick steps: upload a photo, design your portrait, and order. See it before you pay.</p>
+
+        <div className="mt-8">
+          <Stepper current={0} variant="dark" />
+        </div>
 
         <div
           onClick={() => inputRef.current?.click()}
@@ -151,9 +177,9 @@ export default function Studio() {
             e.preventDefault();
             handle(e.dataTransfer.files?.[0]);
           }}
-          className="mt-8 cursor-pointer rounded-2xl border-2 border-dashed border-white/60 bg-white/10 px-8 py-12 backdrop-blur-sm transition hover:border-white hover:bg-white/20"
+          className="cursor-pointer rounded-2xl border-2 border-dashed border-white/60 bg-white/10 px-8 py-12 backdrop-blur-sm transition hover:border-white hover:bg-white/20"
         >
-          <p className="font-display text-2xl">Upload your pet</p>
+          <p className="font-display text-2xl">Step 1 — Upload your pet</p>
           <p className="mt-1 text-sm text-white/80">Drag a photo here, or tap to choose. Phone snaps welcome.</p>
           <input
             ref={inputRef}

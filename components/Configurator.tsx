@@ -316,6 +316,7 @@ export default function Configurator({
         ) : null}
 
         <div className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
+          <p className="text-xs font-medium uppercase tracking-widest text-ink/50">Choose your product &amp; add to cart</p>
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-xs uppercase tracking-widest text-ink/50">
               Product
