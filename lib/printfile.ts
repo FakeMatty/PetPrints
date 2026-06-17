@@ -70,6 +70,31 @@ export function printWidthForInches(longestInches: number): number {
   return Math.max(1200, Math.round((longEdgePx * 400) / 500));
 }
 
+// Render the composited artwork to a PNG Blob (no upload). Used by both the
+// Supabase uploader and the local "Download PNG" button.
+export async function composePrintBlob(svgEl: SVGSVGElement, width = 1600): Promise<Blob> {
+  const canvas = await renderToCanvas(svgEl, width);
+  if (typeof console !== "undefined") {
+    console.debug(`[print] ${canvas.width}×${canvas.height}px (long edge ${canvas.height}px)`);
+  }
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not encode print file"))), "image/png"),
+  );
+}
+
+// Trigger a browser download of the composited artwork as a PNG.
+export async function downloadPrint(svgEl: SVGSVGElement, filename = "pet-portrait.png", width = 2000): Promise<void> {
+  const blob = await composePrintBlob(svgEl, width);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 // Compose the print file at the given width and upload it to Supabase.
 export async function composeAndUploadPrint(svgEl: SVGSVGElement, width = 1600): Promise<string> {
   const canvas = await renderToCanvas(svgEl, width);

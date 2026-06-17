@@ -5,7 +5,7 @@ import PortraitArt, { type PortraitConfig } from "./PortraitArt";
 import ProductMockup, { type ProductKey } from "./ProductMockup";
 import { STYLES, PATTERNS, COLOURS, FONTS } from "@/lib/palette";
 import { CATALOG } from "@/lib/products";
-import { composeAndUploadPrint, printWidthForInches } from "@/lib/printfile";
+import { composeAndUploadPrint, printWidthForInches, downloadPrint } from "@/lib/printfile";
 
 // Which mockup to show for each catalog product, so the preview always matches
 // what the customer is about to buy.
@@ -110,9 +110,27 @@ export default function Configurator({
   const [variantId, setVariantId] = useState(CATALOG[0].variants[0].id);
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [frameColour, setFrameColour] = useState("black");
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Local download of the composited artwork — handy for making tester images.
+  async function downloadImage() {
+    setDownloading(true);
+    try {
+      const svgEl = printRef.current?.querySelector("svg");
+      if (svgEl) {
+        const base = config.nameOn && config.name.trim() ? config.name.trim() : "pet-portrait";
+        const safe = base.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+        await downloadPrint(svgEl as unknown as SVGSVGElement, `${safe}.png`, 2000);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not prepare download");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   function set<K extends keyof PortraitConfig>(k: K, v: PortraitConfig[K]) {
     setConfig((c) => ({ ...c, [k]: v }));
@@ -202,9 +220,19 @@ export default function Configurator({
         <div className="flex h-[480px] items-center justify-center overflow-hidden rounded-lg bg-[#efe9e1] ring-1 ring-black/5">
           <ProductMockup config={config} product={mockup} frameColour={frameHex} />
         </div>
-        <p className="text-center text-xs text-ink/45">
-          Live preview of your {activeProduct.label.toLowerCase()} — changes the moment you pick a product.
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-ink/45">
+            Live preview of your {activeProduct.label.toLowerCase()} — changes the moment you pick a product.
+          </p>
+          <button
+            type="button"
+            onClick={downloadImage}
+            disabled={downloading}
+            className="shrink-0 rounded-full border border-black/15 bg-white px-3 py-1.5 text-xs font-medium text-ink transition hover:border-black/40 disabled:opacity-50"
+          >
+            {downloading ? "Preparing…" : "↓ Download PNG"}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">
