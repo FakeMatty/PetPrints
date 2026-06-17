@@ -22,9 +22,9 @@ export const CATALOG: CatalogProduct[] = [
     key: "unframed",
     label: "Unframed print",
     variants: [
-      { id: "gid://shopify/ProductVariant/56115338150228", label: "8×10 in", price: "35.00", inches: 10 },
-      { id: "gid://shopify/ProductVariant/56115338182996", label: "12×16 in", price: "40.00", inches: 16 },
-      { id: "gid://shopify/ProductVariant/56115338215764", label: "16×20 in", price: "45.00", inches: 20 },
+      { id: "gid://shopify/ProductVariant/56115338150228", label: "A4", price: "29.00", inches: 11.7 },
+      { id: "gid://shopify/ProductVariant/56115338182996", label: "A3", price: "39.00", inches: 16.5 },
+      { id: "gid://shopify/ProductVariant/56115338215764", label: "A2", price: "49.00", inches: 23.4 },
     ],
   },
   {

@@ -14,9 +14,9 @@ export type ProdigiItem = {
 
 export const PRODIGI_SKUS: Record<string, ProdigiItem> = {
   // Unframed fine-art prints (Cold Press Watercolour Paper)
-  "PP-UNF-8x10": { sku: "ART-FAP-CPWP-8X10", sizing: "fillPrintArea" },
-  "PP-UNF-12x16": { sku: "ART-FAP-CPWP-12X16", sizing: "fillPrintArea" },
-  "PP-UNF-16x20": { sku: "ART-FAP-CPWP-16X20", sizing: "fillPrintArea" },
+  "PP-UNF-A4": { sku: "ART-FAP-CPWP-A4", sizing: "fillPrintArea" },
+  "PP-UNF-A3": { sku: "ART-FAP-CPWP-A3", sizing: "fillPrintArea" },
+  "PP-UNF-A2": { sku: "ART-FAP-CPWP-A2", sizing: "fillPrintArea" },
 
   // Framed prints — Classic frame, A-sizes. Require a frame colour.
   "PP-FR-A5": { sku: "GLOBAL-CFP-A5", sizing: "fillPrintArea", attributes: { color: "black" } },
