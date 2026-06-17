@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PortraitArt, { type PortraitConfig } from "@/components/PortraitArt";
+import Studio from "@/components/Studio";
 
-// Live sample portraits (no image files needed — rendered by the engine).
 const GALLERY: PortraitConfig[] = [
   { style: "flat", pattern: "halo", colour: "#A6B89B", name: "Biscuit", nameOn: true, font: "classic" },
   { style: "line", pattern: "dots", colour: "#FAF7F2", name: "Pixel", nameOn: true, font: "minimal" },
@@ -11,8 +11,6 @@ const GALLERY: PortraitConfig[] = [
   { style: "pop", pattern: "halo", colour: "#C57B57", name: "Boss", nameOn: true, font: "bold" },
 ];
 
-// Lifestyle product tiles. `img` points at /public/images/* — drop the Gemini
-// shots there and they appear; until then a warm colour block shows.
 const SHOWCASE = [
   { label: "Framed print", from: "£45", img: "/images/product-framed.jpg", bg: "#A6B89B" },
   { label: "Unframed print", from: "£29", img: "/images/product-print.jpg", bg: "#E8C8C0" },
@@ -45,41 +43,23 @@ function Lifestyle({ src, bg, className }: { src: string; bg: string; className?
 export default function Home() {
   return (
     <main className="bg-bone text-ink">
-      {/* announcement */}
-      <div className="bg-ink py-2 text-center text-xs tracking-wide text-bone">
-        Free UK delivery · Love it or it&apos;s on us
-      </div>
+      <div className="bg-ink py-2 text-center text-xs tracking-wide text-bone">Free UK delivery · Love it or it&apos;s on us</div>
 
-      {/* header */}
-      <header className="mx-auto flex max-w-content items-center justify-between px-5 py-5">
-        <span className="font-display text-xl">Pet Portrait Studio</span>
-        <nav className="hidden gap-8 text-sm text-ink/70 md:flex">
+      <header className="absolute left-0 right-0 z-20 mx-auto flex max-w-content items-center justify-between px-5 py-5">
+        <span className="font-display text-xl text-white drop-shadow">Pet Portrait Studio</span>
+        <nav className="hidden gap-8 text-sm text-white/80 md:flex">
           <a href="#how">How it works</a>
           <a href="#gallery">Gallery</a>
           <a href="#reviews">Reviews</a>
         </nav>
-        <Link href="/create" className="rounded-full bg-terracotta px-5 py-2 text-sm font-medium text-white transition hover:bg-ink">
+        <a href="#studio" className="rounded-full bg-white/90 px-5 py-2 text-sm font-medium text-ink transition hover:bg-white">
           Create yours
-        </Link>
+        </a>
       </header>
 
-      {/* hero */}
-      <section className="mx-auto grid max-w-content items-center gap-10 px-5 py-12 md:grid-cols-2 md:py-20">
-        <div>
-          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-terracotta">Custom pet art</p>
-          <h1 className="font-display text-5xl leading-[1.05] sm:text-6xl">Your dog. As art. In seconds.</h1>
-          <p className="mt-5 max-w-md text-lg text-ink/65">
-            Upload a photo, watch them become a clean illustrated portrait, pick your favourite, and put it on anything. See it before you pay.
-          </p>
-          <Link href="/create" className="mt-8 inline-block rounded-full bg-terracotta px-8 py-3.5 text-base font-medium text-white transition hover:bg-ink">
-            Upload your pet →
-          </Link>
-          <p className="mt-4 text-sm text-ink/50">★★★★★ Loved by 10,000+ pet owners</p>
-        </div>
-        <Lifestyle src="/images/hero.jpg" bg="#A6B89B" className="aspect-[4/5] w-full rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] md:aspect-[3/4]" />
-      </section>
+      {/* the whole upload → loading → editor experience, all on this page */}
+      <Studio />
 
-      {/* trust strip */}
       <div className="border-y border-black/10 bg-white">
         <div className="mx-auto flex max-w-content flex-wrap items-center justify-center gap-x-10 gap-y-2 px-5 py-4 text-sm text-ink/60">
           <span>★★★★★ 10,000+ happy pets</span>
@@ -89,7 +69,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* how it works */}
       <section id="how" className="mx-auto max-w-content px-5 py-20">
         <h2 className="mb-12 text-center font-display text-4xl">How it works</h2>
         <div className="grid gap-10 sm:grid-cols-3">
@@ -103,13 +82,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* sample gallery (live) */}
       <section id="gallery" className="bg-white py-20">
         <div className="mx-auto max-w-content px-5">
           <h2 className="mb-3 text-center font-display text-4xl">One upload, endless looks</h2>
-          <p className="mx-auto mb-10 max-w-xl text-center text-ink/60">
-            Every portrait below comes from the same illustration engine — pick the style, background and name that feel like them.
-          </p>
+          <p className="mx-auto mb-10 max-w-xl text-center text-ink/60">Every portrait below comes from the same illustration engine — pick the style, background and name that feel like them.</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {GALLERY.map((c, i) => (
               <div key={i} className="overflow-hidden rounded-lg ring-1 ring-black/5">
@@ -120,24 +96,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* product range */}
       <section className="mx-auto max-w-content px-5 py-20">
         <h2 className="mb-3 text-center font-display text-4xl">Put them on everything</h2>
         <p className="mx-auto mb-10 max-w-xl text-center text-ink/60">One portrait, ready for the wall, the desk, your pocket — or an instant digital download.</p>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {SHOWCASE.map((p) => (
-            <Link key={p.label} href="/create" className="group block">
+            <a key={p.label} href="#studio" className="group block">
               <Lifestyle src={p.img} bg={p.bg} className="aspect-square w-full rounded-lg transition group-hover:opacity-95" />
               <div className="mt-3 flex items-baseline justify-between">
                 <span className="font-medium">{p.label}</span>
                 <span className="text-sm text-ink/50">from {p.from}</span>
               </div>
-            </Link>
+            </a>
           ))}
         </div>
       </section>
 
-      {/* why us */}
       <section className="bg-white py-20">
         <div className="mx-auto grid max-w-content gap-10 px-5 sm:grid-cols-3">
           {[
@@ -153,7 +127,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* reviews */}
       <section id="reviews" className="mx-auto max-w-content px-5 py-20">
         <h2 className="mb-10 text-center font-display text-4xl">Tails of joy</h2>
         <div className="grid gap-6 sm:grid-cols-3">
@@ -167,17 +140,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* final CTA */}
       <section className="bg-ink py-20 text-center text-bone">
         <h2 className="font-display text-4xl">Ready to see your pet as art?</h2>
-        <Link href="/create" className="mt-8 inline-block rounded-full bg-terracotta px-8 py-3.5 text-base font-medium text-white transition hover:bg-white hover:text-ink">
-          Upload your pet →
-        </Link>
+        <a href="#studio" className="mt-8 inline-block rounded-full bg-terracotta px-8 py-3.5 text-base font-medium text-white transition hover:bg-white hover:text-ink">Upload your pet →</a>
       </section>
 
-      <footer className="mx-auto max-w-content px-5 py-10 text-center text-sm text-ink/40">
-        Pet Portrait Studio · Instant preview · UK fulfilment · Love-it guarantee
-      </footer>
+      <footer className="mx-auto max-w-content px-5 py-10 text-center text-sm text-ink/40">Pet Portrait Studio · Instant preview · UK fulfilment · Love-it guarantee</footer>
     </main>
   );
 }
