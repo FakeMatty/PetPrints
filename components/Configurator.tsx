@@ -11,6 +11,7 @@ const PRODUCTS: { key: ProductKey; label: string }[] = [
   { key: "canvas", label: "Canvas" },
   { key: "mug", label: "Mug" },
   { key: "tee", label: "Tee" },
+  { key: "case", label: "Case" },
 ];
 
 function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {

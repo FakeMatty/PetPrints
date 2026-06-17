@@ -1,6 +1,6 @@
 import PortraitArt, { type PortraitConfig } from "./PortraitArt";
 
-export type ProductKey = "canvas" | "mug" | "tee";
+export type ProductKey = "canvas" | "mug" | "tee" | "case";
 
 // Lifestyle comps so the customer sees the art in context, not on a void.
 // Same composited SVG, dropped onto different products at zero extra cost —
@@ -40,6 +40,23 @@ export default function ProductMockup({
           <div className="absolute left-1/2 top-[44%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-md">
             <PortraitArt config={config} id="tee" width="100%" height="100%" />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (product === "case") {
+    // Tall snap case: the 4:5 artwork is scaled to cover the case (sides crop),
+    // mirroring Prodigi's fillPrintArea so the preview matches the print.
+    return (
+      <div className="flex items-center justify-center bg-[#efe9e1] py-6">
+        <div className="relative" style={{ width: 150, height: 310 }}>
+          <div className="absolute inset-0 overflow-hidden rounded-[30px] bg-black ring-1 ring-black/20">
+            <div className="absolute" style={{ top: 0, left: -49, width: 248, height: 310 }}>
+              <PortraitArt config={config} id="case" width="100%" height="100%" />
+            </div>
+          </div>
+          <div className="absolute left-3 top-3 h-9 w-9 rounded-xl bg-black/40" />
         </div>
       </div>
     );
