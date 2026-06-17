@@ -1,46 +1,28 @@
 import PortraitArt, { type PortraitConfig } from "./PortraitArt";
 
-export type ProductKey = "canvas" | "mug" | "tee" | "case";
+export type ProductKey = "print" | "frame" | "mug" | "case";
 
 // Lifestyle comps so the customer sees the art in context, not on a void.
 // Same composited SVG, dropped onto different products at zero extra cost —
-// the whole point of the vector-first architecture.
+// the whole point of the vector-first architecture. Every mockup is centered
+// inside a fixed-size stage by the caller, so the window never jumps when the
+// customer switches product.
 export default function ProductMockup({
   config,
   product,
+  frameColour = "#1a1a1a",
 }: {
   config: PortraitConfig;
   product: ProductKey;
+  frameColour?: string;
 }) {
   if (product === "mug") {
     return (
-      <div className="flex items-center justify-center py-6">
-        <div className="relative">
-          <div className="h-44 w-44 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-            <PortraitArt config={config} id="mug" width="100%" height="100%" />
-          </div>
-          <div className="absolute -right-7 top-9 h-20 w-12 rounded-r-full border-[10px] border-white/90" />
+      <div className="relative">
+        <div className="h-52 w-52 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+          <PortraitArt config={config} id="mug" width="100%" height="100%" />
         </div>
-      </div>
-    );
-  }
-
-  if (product === "tee") {
-    return (
-      <div className="flex items-center justify-center py-6">
-        <div className="relative h-60 w-60">
-          <svg viewBox="0 0 240 240" className="absolute inset-0 h-full w-full">
-            <path
-              d="M60 28 L96 28 C100 44 140 44 144 28 L180 28 L212 64 L186 92 L172 78 L172 212 L68 212 L68 78 L54 92 L28 64 Z"
-              fill="#f2efe9"
-              stroke="#dcd6cc"
-              strokeWidth="2"
-            />
-          </svg>
-          <div className="absolute left-1/2 top-[44%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-md">
-            <PortraitArt config={config} id="tee" width="100%" height="100%" />
-          </div>
-        </div>
+        <div className="absolute -right-8 top-12 h-24 w-14 rounded-r-full border-[11px] border-white/90" />
       </div>
     );
   }
@@ -49,26 +31,39 @@ export default function ProductMockup({
     // Tall snap case: the 4:5 artwork is scaled to cover the case (sides crop),
     // mirroring Prodigi's fillPrintArea so the preview matches the print.
     return (
-      <div className="flex items-center justify-center bg-[#efe9e1] py-6">
-        <div className="relative" style={{ width: 150, height: 310 }}>
-          <div className="absolute inset-0 overflow-hidden rounded-[30px] bg-black ring-1 ring-black/20">
-            <div className="absolute" style={{ top: 0, left: -49, width: 248, height: 310 }}>
-              <PortraitArt config={config} id="case" width="100%" height="100%" />
-            </div>
+      <div className="relative" style={{ width: 165, height: 340 }}>
+        <div className="absolute inset-0 overflow-hidden rounded-[32px] bg-black ring-1 ring-black/20">
+          <div className="absolute" style={{ top: 0, left: -54, width: 272, height: 340 }}>
+            <PortraitArt config={config} id="case" width="100%" height="100%" />
           </div>
-          <div className="absolute left-3 top-3 h-9 w-9 rounded-xl bg-black/40" />
+        </div>
+        <div className="absolute left-3 top-3 h-10 w-10 rounded-xl bg-black/40" />
+      </div>
+    );
+  }
+
+  if (product === "frame") {
+    // Framed print: the frame takes the colour from the picker, with a white
+    // mat around the artwork so it reads as a real gallery frame.
+    return (
+      <div
+        className="shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
+        style={{ backgroundColor: frameColour, padding: 14, borderRadius: 3 }}
+      >
+        <div className="bg-white" style={{ padding: 14 }}>
+          <div className="h-[360px] w-[288px] overflow-hidden">
+            <PortraitArt config={config} id="frame" width="100%" height="100%" />
+          </div>
         </div>
       </div>
     );
   }
 
-  // canvas on a wall
+  // print: a clean flat paper print with a soft drop shadow.
   return (
-    <div className="flex items-center justify-center bg-[#efe9e1] py-8">
-      <div className="rounded-[3px] border-[10px] border-[#2e2e2e] bg-white p-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)]">
-        <div className="h-64 w-[210px] overflow-hidden">
-          <PortraitArt config={config} id="canvas" width="100%" height="100%" />
-        </div>
+    <div className="bg-white p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)] ring-1 ring-black/5">
+      <div className="h-[412px] w-[330px] overflow-hidden">
+        <PortraitArt config={config} id="prv" width="100%" height="100%" />
       </div>
     </div>
   );

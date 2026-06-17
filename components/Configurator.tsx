@@ -5,14 +5,17 @@ import PortraitArt, { type PortraitConfig } from "./PortraitArt";
 import ProductMockup, { type ProductKey } from "./ProductMockup";
 import { STYLES, PATTERNS, COLOURS, FONTS } from "@/lib/palette";
 import { CATALOG } from "@/lib/products";
-import { composeAndUploadPrint } from "@/lib/printfile";
+import { composeAndUploadPrint, printWidthForInches } from "@/lib/printfile";
 
-const PRODUCTS: { key: ProductKey; label: string }[] = [
-  { key: "canvas", label: "Canvas" },
-  { key: "mug", label: "Mug" },
-  { key: "tee", label: "Tee" },
-  { key: "case", label: "Case" },
-];
+// Which mockup to show for each catalog product, so the preview always matches
+// what the customer is about to buy.
+const PREVIEW_FOR: Record<string, ProductKey> = {
+  digital: "print",
+  unframed: "print",
+  framed: "frame",
+  merch: "mug",
+  case: "case",
+};
 
 // Prodigi's valid frame colours (name = value sent to Prodigi).
 const FRAME_COLOURS: { name: string; hex: string }[] = [
@@ -103,9 +106,9 @@ export default function Configurator({
     nameY: 452,
     nameSize: 40,
   });
-  const [product, setProduct] = useState<ProductKey | "art">("art");
   const [productKey, setProductKey] = useState(CATALOG[0].key);
   const [variantId, setVariantId] = useState(CATALOG[0].variants[0].id);
+  const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [frameColour, setFrameColour] = useState("black");
@@ -119,6 +122,9 @@ export default function Configurator({
   const activeVariant = activeProduct.variants.find((v) => v.id === variantId) ?? activeProduct.variants[0];
   const colourKey = COLOURS.find((c) => c.hex === config.colour)?.key ?? config.colour;
   const hasGenerated = !!petImageUrl;
+  const mockup = PREVIEW_FOR[productKey] ?? "print";
+  const frameHex = FRAME_COLOURS.find((c) => c.name === frameColour)?.hex ?? "#1a1a1a";
+  const subtotal = (Number(activeVariant.price) * qty).toFixed(2);
 
   async function addToCart() {
     setAdding(true);
@@ -129,9 +135,9 @@ export default function Configurator({
     try {
       const svgEl = printRef.current?.querySelector("svg");
       if (svgEl) {
-        // Full ~300 DPI for the chosen size (width = 240 * inches). Uploaded
-        // directly to Supabase from the browser, so no request-size cap.
-        const printWidth = Math.max(1200, Math.round(240 * (activeVariant.inches ?? 8)));
+        // Size the print file to the chosen physical size, capped at 300 DPI so
+        // we never upscale the artwork beyond what print needs.
+        const printWidth = printWidthForInches(activeVariant.inches ?? 8);
         printUrl = await composeAndUploadPrint(svgEl as unknown as SVGSVGElement, printWidth);
       }
     } catch {
@@ -175,7 +181,7 @@ export default function Configurator({
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchandiseId: variantId, quantity: 1, attributes }),
+        body: JSON.stringify({ merchandiseId: variantId, quantity: qty, attributes }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not create cart");
@@ -192,23 +198,13 @@ export default function Configurator({
         <PortraitArt config={config} id="print" width={400} height={500} />
       </div>
       <div className="space-y-3">
-        <div className="overflow-hidden rounded-lg bg-white ring-1 ring-black/5">
-          {product === "art" ? (
-            <PortraitArt config={config} id="main" width="100%" height="100%" />
-          ) : (
-            <ProductMockup config={config} product={product} />
-          )}
+        {/* Fixed-size stage: the window stays put while the product changes. */}
+        <div className="flex h-[480px] items-center justify-center overflow-hidden rounded-lg bg-[#efe9e1] ring-1 ring-black/5">
+          <ProductMockup config={config} product={mockup} frameColour={frameHex} />
         </div>
-        <div className="flex gap-2">
-          <Pill active={product === "art"} onClick={() => setProduct("art")}>
-            Artwork
-          </Pill>
-          {PRODUCTS.map((p) => (
-            <Pill key={p.key} active={product === p.key} onClick={() => setProduct(p.key)}>
-              {p.label}
-            </Pill>
-          ))}
-        </div>
+        <p className="text-center text-xs text-ink/45">
+          Live preview of your {activeProduct.label.toLowerCase()} — changes the moment you pick a product.
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -233,9 +229,9 @@ export default function Configurator({
         ) : null}
 
         <Field label="Pet size & position">
-          <Slider label="Size" value={config.petScale ?? 1} min={0.6} max={1.6} step={0.02} onChange={(v) => set("petScale", v)} />
-          <Slider label="Left / right" value={config.petOffsetX ?? 0} min={-120} max={120} onChange={(v) => set("petOffsetX", v)} />
-          <Slider label="Up / down" value={config.petOffsetY ?? 0} min={-120} max={120} onChange={(v) => set("petOffsetY", v)} />
+          <Slider label="Size" value={config.petScale ?? 1} min={0.6} max={2} step={0.02} onChange={(v) => set("petScale", v)} />
+          <Slider label="Left / right" value={config.petOffsetX ?? 0} min={-220} max={220} onChange={(v) => set("petOffsetX", v)} />
+          <Slider label="Up / down" value={config.petOffsetY ?? 0} min={-260} max={260} onChange={(v) => set("petOffsetY", v)} />
         </Field>
 
         <Field label="Background pattern">
@@ -350,13 +346,24 @@ export default function Configurator({
                 ))}
               </select>
             </label>
+            <label className="flex flex-col gap-1 text-xs uppercase tracking-widest text-ink/50">
+              Qty
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={qty}
+                onChange={(e) => setQty(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                className="w-16 rounded-md border border-black/15 px-2 py-1.5 text-sm font-normal normal-case text-ink"
+              />
+            </label>
             <button
               type="button"
               onClick={addToCart}
               disabled={adding}
               className="ml-auto rounded-full bg-terracotta px-6 py-2.5 text-sm font-medium text-white transition hover:bg-ink disabled:opacity-50"
             >
-              {adding ? "Adding..." : `Add to cart £${activeVariant.price}`}
+              {adding ? "Adding..." : `Add to cart £${subtotal}`}
             </button>
           </div>
           {error ? <p className="text-sm text-red-700">{error}</p> : null}

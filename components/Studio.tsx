@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import Configurator from "./Configurator";
+import HamsterLoader from "./HamsterLoader";
+import PatternBackground from "./PatternBackground";
 
 type Phase = "idle" | "loading" | "editing";
 type Result = { petImageUrl?: string; flatVectorUrl?: string; generationId?: string | null };
@@ -139,12 +141,19 @@ export default function Studio() {
   // ---- loading ----------------------------------------------------------
   if (phase === "loading") {
     return (
-      <section id="studio" className="flex min-h-[78vh] flex-col items-center justify-center bg-bone px-5 py-16">
-        <Stepper current={0} />
-        <div className="w-full max-w-sm text-center">
-          <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-2xl ring-1 ring-black/10">
-            {preview ? <img src={preview} alt="Your pet" className="h-full w-full object-cover" /> : null}
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-bone/70 to-transparent" />
+      <section id="studio" className="relative flex min-h-[78vh] flex-col items-center justify-center overflow-hidden bg-bone px-5 py-16">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.10]">
+          <PatternBackground variant="waves" />
+        </div>
+        <div className="relative z-10">
+          <Stepper current={0} />
+        </div>
+        <div className="relative z-10 w-full max-w-sm text-center">
+          <div className="flex flex-col items-center">
+            <HamsterLoader />
+            {preview ? (
+              <img src={preview} alt="Your pet" className="mt-3 h-12 w-12 rounded-full object-cover ring-1 ring-black/10" />
+            ) : null}
           </div>
           <p className="mt-6 font-display text-2xl text-ink">{msg}</p>
           <p className="mt-1 text-sm text-ink/55">Hang tight — this takes a few seconds. Don&apos;t close the page.</p>
