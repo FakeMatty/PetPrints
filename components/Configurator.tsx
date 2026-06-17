@@ -14,6 +14,18 @@ const PRODUCTS: { key: ProductKey; label: string }[] = [
   { key: "case", label: "Case" },
 ];
 
+// Prodigi's valid frame colours (name = value sent to Prodigi).
+const FRAME_COLOURS: { name: string; hex: string }[] = [
+  { name: "black", hex: "#1a1a1a" },
+  { name: "white", hex: "#f5f5f5" },
+  { name: "natural", hex: "#c9a66b" },
+  { name: "silver", hex: "#c4c4c4" },
+  { name: "light grey", hex: "#d3d3d3" },
+  { name: "dark grey", hex: "#555555" },
+  { name: "gold", hex: "#d4af37" },
+  { name: "brown", hex: "#5a3a22" },
+];
+
 function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
@@ -96,6 +108,7 @@ export default function Configurator({
   const [variantId, setVariantId] = useState(CATALOG[0].variants[0].id);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [frameColour, setFrameColour] = useState("black");
   const printRef = useRef<HTMLDivElement>(null);
 
   function set<K extends keyof PortraitConfig>(k: K, v: PortraitConfig[K]) {
@@ -154,6 +167,7 @@ export default function Configurator({
       { key: "font", value: config.font },
       { key: "generation_id", value: generationId ?? "" },
       { key: "config_id", value: configId },
+      ...(productKey === "framed" ? [{ key: "frame_colour", value: frameColour }] : []),
       { key: "_artwork_svg_url", value: flatVectorUrl ?? "pending-generation" },
       { key: "_artwork_print_url", value: printUrl },
     ];
@@ -284,6 +298,22 @@ export default function Configurator({
             <Slider label="Text position (top - bottom)" value={config.nameY ?? 452} min={80} max={490} onChange={(v) => set("nameY", v)} />
           </div>
         </Field>
+
+        {productKey === "framed" ? (
+          <Field label="Frame colour">
+            {FRAME_COLOURS.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                title={c.name}
+                aria-label={c.name}
+                onClick={() => setFrameColour(c.name)}
+                className={`h-9 w-9 rounded-md ring-2 ring-offset-2 transition ${frameColour === c.name ? "ring-ink" : "ring-transparent hover:ring-black/20"}`}
+                style={{ backgroundColor: c.hex, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
+              />
+            ))}
+          </Field>
+        ) : null}
 
         <div className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
           <div className="flex flex-wrap items-end gap-3">

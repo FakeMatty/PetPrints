@@ -88,11 +88,16 @@ export async function POST(request: Request) {
       skipped.push(`${li.sku}:no-artwork`);
       continue;
     }
+    // Apply the customer's chosen frame colour (falls back to the SKU default).
+    const frameColour = prop(li, "frame_colour");
+    const attributes = mapped.attributes
+      ? { ...mapped.attributes, ...(frameColour ? { color: frameColour } : {}) }
+      : undefined;
     items.push({
       sku: mapped.sku,
       copies: li.quantity || 1,
       sizing: mapped.sizing,
-      ...(mapped.attributes ? { attributes: mapped.attributes } : {}),
+      ...(attributes ? { attributes } : {}),
       assets: [{ printArea: "default", url: printUrl }],
     });
   }
