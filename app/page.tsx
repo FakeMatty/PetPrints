@@ -1,21 +1,22 @@
 import Link from "next/link";
-import PortraitArt, { type PortraitConfig } from "@/components/PortraitArt";
 import Studio from "@/components/Studio";
 
-const GALLERY: PortraitConfig[] = [
-  { style: "flat", pattern: "halo", colour: "#A6B89B", name: "Biscuit", nameOn: true, font: "classic" },
-  { style: "line", pattern: "dots", colour: "#FAF7F2", name: "Pixel", nameOn: true, font: "minimal" },
-  { style: "pop", pattern: "lines", colour: "#2B3A55", name: "Rufus", nameOn: true, font: "bold" },
-  { style: "flat", pattern: "grid", colour: "#D8A33B", name: "Maple", nameOn: true, font: "script" },
-  { style: "watercolour", pattern: "solid", colour: "#E8C8C0", name: "Olive", nameOn: true, font: "classic" },
-  { style: "pop", pattern: "halo", colour: "#C57B57", name: "Boss", nameOn: true, font: "bold" },
+// Real portrait samples. Drop the square (4:5) PNG/JPGs into /public/images with
+// these names — until a file exists the tile shows its warm fallback colour.
+const GALLERY = [
+  { src: "/images/gallery-1.png", bg: "#C57B57" },
+  { src: "/images/gallery-2.png", bg: "#A6B89B" },
+  { src: "/images/gallery-3.png", bg: "#D8A33B" },
+  { src: "/images/gallery-4.png", bg: "#E8C8C0" },
+  { src: "/images/gallery-5.png", bg: "#2B3A55" },
+  { src: "/images/gallery-6.png", bg: "#FAF7F2" },
 ];
 
 const SHOWCASE = [
-  { label: "Framed print", from: "£45", img: "/images/product-framed.jpg", bg: "#A6B89B" },
-  { label: "Unframed print", from: "£29", img: "/images/product-print.jpg", bg: "#E8C8C0" },
-  { label: "Phone case", from: "£29", img: "/images/product-case.jpg", bg: "#8FA9C0" },
-  { label: "Mug", from: "£24", img: "/images/product-mug.jpg", bg: "#D8A33B" },
+  { label: "Framed print", from: "£45", img: "/images/product-framed.png", bg: "#A6B89B" },
+  { label: "Unframed print", from: "£29", img: "/images/product-print.png", bg: "#E8C8C0" },
+  { label: "Phone case", from: "£29", img: "/images/product-case.png", bg: "#8FA9C0" },
+  { label: "Mug", from: "£24", img: "/images/product-mug.png", bg: "#D8A33B" },
 ];
 
 const STEPS = [
@@ -87,10 +88,8 @@ export default function Home() {
           <h2 className="mb-3 text-center font-display text-4xl">One upload, endless looks</h2>
           <p className="mx-auto mb-10 max-w-xl text-center text-ink/60">Every portrait below comes from the same illustration engine — pick the style, background and name that feel like them.</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {GALLERY.map((c, i) => (
-              <div key={i} className="overflow-hidden rounded-lg ring-1 ring-black/5">
-                <PortraitArt config={c} id={`g${i}`} width="100%" height="100%" />
-              </div>
+            {GALLERY.map((g, i) => (
+              <Lifestyle key={i} src={g.src} bg={g.bg} className="aspect-[4/5] w-full overflow-hidden rounded-lg ring-1 ring-black/5" />
             ))}
           </div>
         </div>

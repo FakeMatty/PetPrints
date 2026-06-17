@@ -169,7 +169,7 @@ export default function Studio() {
   // ---- idle: Step 1 (Upload) -------------------------------------------
   return (
     <section id="studio" className="relative flex min-h-[80vh] items-center justify-center overflow-hidden">
-      <div className="absolute inset-0" style={{ backgroundColor: "#2E2E2E", backgroundImage: "url('/images/hero.jpg')", backgroundSize: "cover", backgroundPosition: "center" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "#2E2E2E", backgroundImage: "url('/images/hero.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
       <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-black/55" />
       <div className="relative z-10 mx-auto w-full max-w-xl px-5 py-20 text-center text-white">
         <h1 className="font-display text-5xl leading-[1.05] drop-shadow sm:text-6xl">Your dog. As art. In seconds.</h1>
